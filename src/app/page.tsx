@@ -2,10 +2,9 @@
 
 import { Camera, Check, LayoutDashboard, RefreshCcw, ScanLine, Send } from "lucide-react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { getDownloadURL, ref, uploadString } from "firebase/storage";
 import { signInWithCustomToken } from "firebase/auth";
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { auth, db, storage } from "@/lib/firebase/client";
+import { auth, db } from "@/lib/firebase/client";
 import { money } from "@/lib/money";
 import type { ReceiptOcr, UserProfile } from "@/lib/types";
 
@@ -28,6 +27,16 @@ function withTimeout<T>(promise: Promise<T>, label: string, timeoutMs = 30000) {
       window.setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs / 1000}s.`)), timeoutMs);
     })
   ]);
+}
+
+function compressedReceiptDataUrl(video: HTMLVideoElement, canvas: HTMLCanvasElement) {
+  const maxWidth = 1100;
+  const scale = Math.min(1, maxWidth / video.videoWidth);
+  canvas.width = Math.round(video.videoWidth * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
+  canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  return canvas.toDataURL("image/jpeg", 0.62);
 }
 
 export default function KioskPage() {
@@ -76,10 +85,7 @@ export default function KioskPage() {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d")?.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.88);
+    const dataUrl = compressedReceiptDataUrl(video, canvas);
     setImageDataUrl(dataUrl);
     setBusy("ocr");
     setMessage("");
@@ -113,20 +119,18 @@ export default function KioskPage() {
     }
     setBusy("send");
     try {
-      setMessage("Uploading receipt image...");
-      const fileName = `${Date.now()}.jpg`;
-      const receiptRef = ref(storage, `receipts/${profile.uid}/${fileName}`);
-      await withTimeout(uploadString(receiptRef, imageDataUrl, "data_url"), "Receipt upload");
+      if (imageDataUrl.length > 850000) {
+        throw new Error("Receipt image is too large. Retake it closer to the receipt and try again.");
+      }
 
       setMessage("Saving expense for approval...");
-      const imageUrl = await withTimeout(getDownloadURL(receiptRef), "Receipt URL lookup");
 
       await withTimeout(addDoc(collection(db, "expenses"), {
         ...ocr,
         employeeId: profile.uid,
         employeeName: profile.displayName,
         managerId: profile.managerId,
-        imageUrl,
+        imageUrl: imageDataUrl,
         status: "pending",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()

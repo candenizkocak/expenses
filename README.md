@@ -7,7 +7,7 @@ Firebase-backed receipt kiosk for RFID employee login, webcam receipt capture, G
 - Raspberry Pi kiosk opens the `/` page full screen.
 - Employee scans an RFID card with a USB reader.
 - The app exchanges the card id for a Firebase custom auth token.
-- Employee takes a receipt photo with the webcam.
+- Employee takes a compressed receipt photo with the webcam.
 - The server sends the image to Gemini and shows extracted receipt fields.
 - Employee can retake the image or send it for manager approval.
 - Manager logs in at `/login`, reviews receipt details and image, then approves or rejects.
@@ -20,14 +20,13 @@ Create a Firebase project with these products enabled:
 
 - Authentication with Email/Password enabled
 - Firestore
-- Storage
 
 Copy `.env.example` to `.env.local` and fill in the Firebase web config, Firebase Admin service account values, and `GEMINI_API_KEY`.
 
-Deploy rules and indexes:
+Deploy Firestore rules and indexes:
 
 ```bash
-firebase deploy --only firestore:rules,firestore:indexes,storage
+firebase deploy --only firestore:rules,firestore:indexes
 ```
 
 ## Firestore Data Model
@@ -66,7 +65,7 @@ Map RFID cards to Firebase users:
 }
 ```
 
-Expenses are created by the kiosk in `expenses/{expenseId}`.
+Expenses are created by the kiosk in `expenses/{expenseId}`. Receipt images are stored as compressed JPEG data URLs in the expense document, so Firebase Storage is not required for the prototype.
 
 ## Raspberry Pi Kiosk
 
