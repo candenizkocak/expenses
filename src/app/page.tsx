@@ -21,6 +21,15 @@ const emptyOcr: ReceiptOcr = {
   confidence: 0
 };
 
+function withTimeout<T>(promise: Promise<T>, label: string, timeoutMs = 30000) {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      window.setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs / 1000}s.`)), timeoutMs);
+    })
+  ]);
+}
+
 export default function KioskPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -104,11 +113,15 @@ export default function KioskPage() {
     }
     setBusy("send");
     try {
+      setMessage("Uploading receipt image...");
       const fileName = `${Date.now()}.jpg`;
       const receiptRef = ref(storage, `receipts/${profile.uid}/${fileName}`);
-      await uploadString(receiptRef, imageDataUrl, "data_url");
-      const imageUrl = await getDownloadURL(receiptRef);
-      await addDoc(collection(db, "expenses"), {
+      await withTimeout(uploadString(receiptRef, imageDataUrl, "data_url"), "Receipt upload");
+
+      setMessage("Saving expense for approval...");
+      const imageUrl = await withTimeout(getDownloadURL(receiptRef), "Receipt URL lookup");
+
+      await withTimeout(addDoc(collection(db, "expenses"), {
         ...ocr,
         employeeId: profile.uid,
         employeeName: profile.displayName,
@@ -117,11 +130,11 @@ export default function KioskPage() {
         status: "pending",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      });
-      setMessage("Expense sent for manager approval.");
+      }), "Expense save");
       retake();
       setProfile(null);
       await auth.signOut();
+      setMessage("Expense sent for manager approval.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not send expense.");
     } finally {
