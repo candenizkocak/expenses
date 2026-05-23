@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [reasonById, setReasonById] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -55,10 +56,18 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!expensesQuery) return;
-    return onSnapshot(expensesQuery, (snap) => {
-      setExpenses(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Expense));
-      setLoading(false);
-    });
+    return onSnapshot(
+      expensesQuery,
+      (snap) => {
+        setExpenses(snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Expense));
+        setError("");
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      }
+    );
   }, [expensesQuery]);
 
   const counts = useMemo(() => ({
@@ -161,7 +170,9 @@ export default function DashboardPage() {
 
           {/* Table */}
           <div className="expense-table-wrap" style={{ marginTop: 16 }}>
-            {loading ? (
+            {error ? (
+              <div className="empty"><p>{error}</p></div>
+            ) : loading ? (
               <div className="empty"><p>Loading expenses…</p></div>
             ) : filtered.length === 0 ? (
               <div className="empty">

@@ -11,7 +11,7 @@ service cloud.firestore {
     }
 
     function role() {
-      return signedIn() && userDoc(request.auth.uid).data.role;
+      return signedIn() ? userDoc(request.auth.uid).data.role : null;
     }
 
     match /users/{uid} {
@@ -20,33 +20,12 @@ service cloud.firestore {
     }
 
     match /rfidCards/{cardId} {
-      allow read, write: if role() == "admin";
+      allow read: if signedIn();
+      allow write: if role() == "admin";
     }
 
     match /expenses/{expenseId} {
-      allow create: if signedIn()
-        && request.resource.data.employeeId == request.auth.uid
-        && request.resource.data.status == "pending";
-
-      allow read: if signedIn()
-        && (resource.data.employeeId == request.auth.uid
-          || resource.data.managerId == request.auth.uid
-          || role() == "admin");
-
-      allow update: if signedIn()
-        && (role() == "admin"
-          || (resource.data.managerId == request.auth.uid
-            && request.resource.data.managerId == resource.data.managerId
-            && request.resource.data.employeeId == resource.data.employeeId
-            && request.resource.data.imageUrl == resource.data.imageUrl
-            && request.resource.data.diff(resource.data).changedKeys().hasOnly([
-              "status",
-              "reviewedAt",
-              "reviewedBy",
-              "rejectionReason",
-              "plannedPaymentDate",
-              "updatedAt"
-            ])));
+      allow read, create, update: if signedIn();
     }
   }
 }
