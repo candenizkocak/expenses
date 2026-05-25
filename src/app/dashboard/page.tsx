@@ -1,6 +1,8 @@
 "use client";
 
 import { Check, ChevronDown, LayoutDashboard, LogOut, Receipt, ScanLine, X } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ImageLightbox } from "@/components/ImageLightbox";
 import {
   collection,
   doc,
@@ -31,6 +33,7 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useEffect(() => {
     return onAuthStateChanged(auth, (currentUser) => {
@@ -105,6 +108,13 @@ export default function DashboardPage() {
 
   return (
     <div className="app">
+      {lightboxSrc && (
+        <ImageLightbox
+          src={lightboxSrc}
+          alt="Receipt"
+          onClose={() => setLightboxSrc(null)}
+        />
+      )}
       <aside className="sidebar">
         <div className="sidebar-logo">
           <span className="sidebar-logo-mark">E</span>
@@ -129,6 +139,7 @@ export default function DashboardPage() {
             <div className="sidebar-user-name">{profile?.displayName || user?.email}</div>
             <div className="sidebar-user-role">{profile?.role}</div>
           </div>
+          <ThemeToggle />
           <button className="ghost" onClick={logout} title="Log out">
             <LogOut size={14} />
           </button>
@@ -193,6 +204,8 @@ export default function DashboardPage() {
                         className="expense-thumb"
                         src={expense.imageUrl}
                         alt={`${expense.merchant || "Receipt"} receipt`}
+                        style={{ cursor: "zoom-in" }}
+                        onClick={(e) => { e.stopPropagation(); setLightboxSrc(expense.imageUrl); }}
                       />
 
                       <div>
@@ -225,6 +238,8 @@ export default function DashboardPage() {
                           className="expense-detail-image"
                           src={expense.imageUrl}
                           alt={`${expense.merchant || "Receipt"} receipt`}
+                          style={{ cursor: "zoom-in" }}
+                          onClick={() => setLightboxSrc(expense.imageUrl)}
                         />
 
                         <div>

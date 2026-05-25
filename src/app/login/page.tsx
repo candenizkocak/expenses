@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle, Receipt, ScanLine, Zap } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -75,6 +76,9 @@ export default function LoginPage() {
 
       <div className="login-form-area">
         <div className="login-form-wrap">
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 24 }}>
+            <ThemeToggle />
+          </div>
           <p className="login-form-eyebrow">
             <Receipt size={13} /> Manager &amp; Employee
           </p>

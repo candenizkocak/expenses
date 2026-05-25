@@ -1,6 +1,7 @@
 "use client";
 
 import { Camera, Check, LayoutDashboard, RefreshCcw, ScanLine, Send } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { signInWithCustomToken } from "firebase/auth";
 import { FormEvent, useEffect, useRef, useState } from "react";
@@ -156,16 +157,23 @@ export default function KioskPage() {
             <p>{profile ? `Welcome, ${profile.displayName}` : "Scan your RFID card to begin"}</p>
           </div>
         </div>
-        <a href="/" className="btn">
-          <LayoutDashboard size={13} /> Sign in
-        </a>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <ThemeToggle />
+          <a href="/" className="btn">
+            <LayoutDashboard size={13} /> Sign in
+          </a>
+        </div>
       </div>
 
       {!profile ? (
         <>
           <div className="kiosk-hero">
-            <div className="kiosk-hero-icon">
-              <ScanLine size={28} />
+            <div className="kiosk-scan-wrap">
+              <div className="kiosk-scan-ring" />
+              <div className="kiosk-scan-ring kiosk-scan-ring-2" />
+              <div className="kiosk-hero-icon">
+                <ScanLine size={28} />
+              </div>
             </div>
             <h2 className="kiosk-hero-title">Ready to scan</h2>
             <p className="kiosk-hero-sub">Hold your RFID card near the reader, or enter your card ID below.</p>
