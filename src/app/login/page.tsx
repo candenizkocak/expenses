@@ -120,7 +120,7 @@ export default function LoginPage() {
 
           <div className="login-form-footer">
             Using a kiosk terminal?{" "}
-            <a href="/" style={{ color: "var(--brand)", fontWeight: 600, textDecoration: "none" }}>
+            <a href="/kiosk" style={{ color: "var(--brand)", fontWeight: 600, textDecoration: "none" }}>
               Go to Kiosk
             </a>
           </div>

@@ -4,14 +4,14 @@ Firebase-backed receipt kiosk for RFID employee login, webcam receipt capture, G
 
 ## What It Does
 
-- Raspberry Pi kiosk opens the `/` page full screen.
+- Raspberry Pi kiosk opens the `/kiosk` page full screen.
 - Employee scans an RFID card with a USB reader.
 - The app exchanges the card id for a Firebase custom auth token.
 - Employee takes a compressed receipt photo with the webcam.
 - The server sends the image to Gemini and shows extracted receipt fields.
 - Employee can retake the image or send it for manager approval.
-- Manager logs in at `/login`, reviews receipt details and image, then approves or rejects.
-- Employee logs in at `/login` to see status and planned payment date.
+- Manager logs in at `/` or `/login`, reviews receipt details and image, then approves or rejects.
+- Employee logs in at `/` or `/login` to see status and planned payment date.
 - Approved expenses get a planned payment date equal to the end of the approval month.
 
 ## Firebase Setup
@@ -82,7 +82,7 @@ npm start
 Open Chromium in kiosk mode:
 
 ```bash
-chromium-browser --kiosk http://localhost:3000
+chromium-browser --kiosk http://localhost:3000/kiosk
 ```
 
 For production, deploy the Next.js app to a Node-capable host and point `expenses.candenizkocak.com` at it. This app uses server routes, so static Firebase Hosting alone is not enough unless you also deploy the Next server through Cloud Run, App Hosting, or another Node host.
