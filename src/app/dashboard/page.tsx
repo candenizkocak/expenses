@@ -105,11 +105,10 @@ export default function DashboardPage() {
 
   return (
     <div className="app">
-      {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-logo">
           <span className="sidebar-logo-mark">E</span>
-          <span className="sidebar-logo-name">ExpenseKit</span>
+          <span className="sidebar-logo-name">Expense Portal</span>
         </div>
 
         <nav className="sidebar-nav">
@@ -118,7 +117,7 @@ export default function DashboardPage() {
             <LayoutDashboard size={15} />
             {isReviewer ? "Approvals" : "My Expenses"}
           </a>
-          <a href="/" className="sidebar-nav-item">
+          <a href="/kiosk" className="sidebar-nav-item">
             <ScanLine size={15} />
             Kiosk
           </a>
@@ -136,7 +135,6 @@ export default function DashboardPage() {
         </div>
       </aside>
 
-      {/* Main */}
       <div className="main">
         <header className="topbar">
           <div>
@@ -144,17 +142,16 @@ export default function DashboardPage() {
               {isReviewer ? "Expense Approvals" : "My Expenses"}
             </p>
             <p className="topbar-subtitle">
-              {loading ? "Loading…" : `${expenses.length} expense${expenses.length !== 1 ? "s" : ""} total`}
+              {loading ? "Loading..." : `${expenses.length} expense${expenses.length !== 1 ? "s" : ""} total`}
             </p>
           </div>
           <div className="actions">
-            <a href="/" className="btn"><ScanLine size={13} /> Kiosk</a>
+            <a href="/kiosk" className="btn"><ScanLine size={13} /> Kiosk</a>
             <button className="secondary" onClick={logout}><LogOut size={13} /> Log out</button>
           </div>
         </header>
 
         <div className="page-body">
-          {/* Tabs */}
           <div className="tabs">
             {(["all", "pending", "approved", "rejected"] as Tab[]).map((tab) => (
               <button
@@ -168,12 +165,11 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* Table */}
           <div className="expense-table-wrap" style={{ marginTop: 16 }}>
             {error ? (
               <div className="empty"><p>{error}</p></div>
             ) : loading ? (
-              <div className="empty"><p>Loading expenses…</p></div>
+              <div className="empty"><p>Loading expenses...</p></div>
             ) : filtered.length === 0 ? (
               <div className="empty">
                 <Receipt size={36} />
@@ -189,7 +185,6 @@ export default function DashboardPage() {
 
                 return (
                   <div key={expense.id}>
-                    {/* Row */}
                     <div
                       className="expense-row"
                       onClick={() => setExpandedId(isExpanded ? null : (expense.id ?? null))}
@@ -207,7 +202,7 @@ export default function DashboardPage() {
 
                       <div className="expense-amount">
                         {money(expense.totalPrice, expense.currency)}
-                        <div className="expense-date">{expense.receiptDate || "—"}</div>
+                        <div className="expense-date">{expense.receiptDate || "-"}</div>
                       </div>
 
                       <div className="expense-meta">
@@ -224,7 +219,6 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
-                    {/* Expanded detail */}
                     {isExpanded && (
                       <div className="expense-detail">
                         <img
@@ -234,7 +228,7 @@ export default function DashboardPage() {
                         />
 
                         <div>
-                          <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 15 }}>
+                          <p style={{ margin: "0 0 12px", fontWeight: 600, fontSize: 15 }}>
                             {expense.merchant || "Unknown merchant"}
                           </p>
                           <div className="data-list">
@@ -247,9 +241,9 @@ export default function DashboardPage() {
 
                         <div>
                           <div className="data-list" style={{ marginBottom: 16 }}>
-                            <Data label="Receipt date" value={expense.receiptDate || "—"} />
-                            <Data label="Payment date" value={expense.plannedPaymentDate || "—"} />
-                            <Data label="Employee" value={expense.employeeName || "—"} />
+                            <Data label="Receipt date" value={expense.receiptDate || "-"} />
+                            <Data label="Payment date" value={expense.plannedPaymentDate || "-"} />
+                            <Data label="Employee" value={expense.employeeName || "-"} />
                           </div>
 
                           {expense.rejectionReason && (

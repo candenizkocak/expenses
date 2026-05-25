@@ -157,7 +157,7 @@ export default function KioskPage() {
           </div>
         </div>
         <a href="/" className="btn">
-          <LayoutDashboard size={13} /> Dashboard
+          <LayoutDashboard size={13} /> Sign in
         </a>
       </div>
 

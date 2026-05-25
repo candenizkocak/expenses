@@ -29,21 +29,19 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      {/* Left brand panel */}
       <div className="login-brand">
         <div className="login-brand-top">
           <div className="login-brand-logo">
             <span className="login-brand-mark">E</span>
-            <span className="login-brand-name">ExpenseKit</span>
+            <span className="login-brand-name">Expense Portal</span>
           </div>
 
           <div>
             <h1 className="login-brand-headline">
-              Smarter expense<br />management for your team
+              Expense control,<br />without the noise.
             </h1>
             <p className="login-brand-sub">
-              Capture receipts with a kiosk, auto-extract data with AI,
-              and approve expenses in seconds — all in one place.
+              A focused workspace for receipt capture, review, and payment planning.
             </p>
           </div>
 
@@ -51,38 +49,37 @@ export default function LoginPage() {
             <div className="login-feature">
               <span className="login-feature-icon"><ScanLine size={17} /></span>
               <div>
-                <div className="login-feature-title">RFID Kiosk</div>
-                <div className="login-feature-desc">Employees scan in and submit receipts instantly at the kiosk terminal.</div>
+                <div className="login-feature-title">Kiosk capture</div>
+                <div className="login-feature-desc">Employees scan in and submit receipts from the terminal.</div>
               </div>
             </div>
             <div className="login-feature">
               <span className="login-feature-icon"><Zap size={17} /></span>
               <div>
-                <div className="login-feature-title">AI-Powered OCR</div>
-                <div className="login-feature-desc">Gemini extracts merchant, amount, and tax data automatically.</div>
+                <div className="login-feature-title">Receipt reading</div>
+                <div className="login-feature-desc">Merchant, amount, and tax fields are prepared for review.</div>
               </div>
             </div>
             <div className="login-feature">
               <span className="login-feature-icon"><CheckCircle size={17} /></span>
               <div>
-                <div className="login-feature-title">One-click approvals</div>
-                <div className="login-feature-desc">Managers review and approve expenses from a clean dashboard.</div>
+                <div className="login-feature-title">Approvals</div>
+                <div className="login-feature-desc">Managers approve or reject submissions from a clear queue.</div>
               </div>
             </div>
           </div>
         </div>
 
-        <p className="login-brand-footer">© {new Date().getFullYear()} ExpenseKit</p>
+        <p className="login-brand-footer">Copyright {new Date().getFullYear()} Expense Portal</p>
       </div>
 
-      {/* Right form panel */}
       <div className="login-form-area">
         <div className="login-form-wrap">
           <p className="login-form-eyebrow">
             <Receipt size={13} /> Manager &amp; Employee
           </p>
-          <h2 className="login-form-title">Sign in to your account</h2>
-          <p className="login-form-sub">Enter your credentials to access the dashboard.</p>
+          <h2 className="login-form-title">Sign in</h2>
+          <p className="login-form-sub">Access approvals and expense status.</p>
 
           <form onSubmit={login}>
             <label>
@@ -100,7 +97,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 autoComplete="current-password"
-                placeholder="••••••••"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -112,7 +109,7 @@ export default function LoginPage() {
               disabled={busy || !email || !password}
               style={{ width: "100%", marginTop: 4 }}
             >
-              {busy ? "Signing in…" : "Sign in"}
+              {busy ? "Signing in..." : "Sign in"}
             </button>
 
             {error && <p className="error-msg">{error}</p>}
@@ -120,7 +117,7 @@ export default function LoginPage() {
 
           <div className="login-form-footer">
             Using a kiosk terminal?{" "}
-            <a href="/kiosk" style={{ color: "var(--brand)", fontWeight: 600, textDecoration: "none" }}>
+            <a href="/kiosk">
               Go to Kiosk
             </a>
           </div>
