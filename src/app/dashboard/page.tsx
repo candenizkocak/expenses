@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, LayoutDashboard, LogOut, Receipt, ScanLine, X } from "lucide-react";
+import { Check, ChevronDown, Download, LayoutDashboard, LogOut, Receipt, ScanLine, Settings, ShieldAlert, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import {
@@ -19,9 +19,10 @@ import { useEffect, useMemo, useState } from "react";
 import { auth, db } from "@/lib/firebase/client";
 import { endOfMonthIso } from "@/lib/date";
 import { money } from "@/lib/money";
-import type { Expense, UserProfile } from "@/lib/types";
+import { duplicateFlags } from "@/lib/policy";
+import { REJECTION_REASONS, type Expense, type UserProfile } from "@/lib/types";
 
-type Tab = "all" | "pending" | "approved" | "rejected";
+type Tab = "all" | "pending" | "approved" | "rejected" | "paid";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("all");
+  const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
@@ -78,11 +80,21 @@ export default function DashboardPage() {
     pending: expenses.filter((e) => e.status === "pending").length,
     approved: expenses.filter((e) => e.status === "approved").length,
     rejected: expenses.filter((e) => e.status === "rejected").length,
+    paid: expenses.filter((e) => e.status === "paid").length,
   }), [expenses]);
 
   const filtered = useMemo(
-    () => (activeTab === "all" ? expenses : expenses.filter((e) => e.status === activeTab)),
-    [expenses, activeTab]
+    () => {
+      const byStatus = activeTab === "all" ? expenses : expenses.filter((e) => e.status === activeTab);
+      const term = search.trim().toLowerCase();
+      if (!term) return byStatus;
+      return byStatus.filter((expense) =>
+        [expense.merchant, expense.employeeName, expense.category, expense.receiptDate, expense.status]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(term))
+      );
+    },
+    [expenses, activeTab, search]
   );
 
   async function review(expense: Expense, status: "approved" | "rejected") {
@@ -92,8 +104,34 @@ export default function DashboardPage() {
       reviewedAt: serverTimestamp(),
       reviewedBy: user.uid,
       updatedAt: serverTimestamp(),
-      rejectionReason: status === "rejected" ? reasonById[expense.id] || "Rejected by manager." : "",
+      rejectReasonCode: status === "rejected" ? reasonById[expense.id] || "Needs more explanation" : "",
+      rejectionReason: status === "rejected" ? reasonById[expense.id] || "Needs more explanation" : "",
       plannedPaymentDate: status === "approved" ? endOfMonthIso(new Date()) : ""
+    });
+    setExpandedId(null);
+  }
+
+  async function reopen(expense: Expense) {
+    if (!expense.id) return;
+    await updateDoc(doc(db, "expenses", expense.id), {
+      status: "pending",
+      reviewedAt: null,
+      reviewedBy: "",
+      rejectReasonCode: "",
+      rejectionReason: "",
+      plannedPaymentDate: "",
+      updatedAt: serverTimestamp()
+    });
+    setExpandedId(null);
+  }
+
+  async function markPaid(expense: Expense) {
+    if (!expense.id || !user) return;
+    await updateDoc(doc(db, "expenses", expense.id), {
+      status: "paid",
+      paidAt: serverTimestamp(),
+      paidBy: user.uid,
+      updatedAt: serverTimestamp()
     });
     setExpandedId(null);
   }
@@ -131,6 +169,18 @@ export default function DashboardPage() {
             <ScanLine size={15} />
             Kiosk
           </a>
+          {isReviewer && (
+            <a href="/finance" className="sidebar-nav-item">
+              <Download size={15} />
+              Finance
+            </a>
+          )}
+          {profile?.role === "admin" && (
+            <a href="/admin" className="sidebar-nav-item">
+              <Settings size={15} />
+              Admin
+            </a>
+          )}
         </nav>
 
         <div className="sidebar-user">
@@ -158,13 +208,21 @@ export default function DashboardPage() {
           </div>
           <div className="actions">
             <a href="/kiosk" className="btn"><ScanLine size={13} /> Kiosk</a>
+            {isReviewer && <a href="/finance" className="btn"><Download size={13} /> Export</a>}
             <button className="secondary" onClick={logout}><LogOut size={13} /> Log out</button>
           </div>
         </header>
 
         <div className="page-body">
+          <div className="toolbar">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search merchant, employee, category, date..."
+            />
+          </div>
           <div className="tabs">
-            {(["all", "pending", "approved", "rejected"] as Tab[]).map((tab) => (
+            {(["all", "pending", "approved", "rejected", "paid"] as Tab[]).map((tab) => (
               <button
                 key={tab}
                 className={`tab${activeTab === tab ? " active" : ""}`}
@@ -193,6 +251,7 @@ export default function DashboardPage() {
               filtered.map((expense) => {
                 const isExpanded = expandedId === expense.id;
                 const isPending = expense.status === "pending";
+                const flags = [...(expense.policyFlags || []), ...duplicateFlags(expense, expenses)];
 
                 return (
                   <div key={expense.id}>
@@ -210,7 +269,10 @@ export default function DashboardPage() {
 
                       <div>
                         <div className="expense-merchant">{expense.merchant || "Unknown merchant"}</div>
-                        <div className="expense-employee">{expense.employeeName}</div>
+                        <div className="expense-employee">
+                          {expense.employeeName}
+                          {expense.category ? ` - ${expense.category}` : ""}
+                        </div>
                       </div>
 
                       <div className="expense-amount">
@@ -220,6 +282,11 @@ export default function DashboardPage() {
 
                       <div className="expense-meta">
                         <span className={`badge ${expense.status}`}>{expense.status}</span>
+                        {flags.length > 0 && (
+                          <div className="expense-date" style={{ marginTop: 4 }}>
+                            <ShieldAlert size={12} style={{ verticalAlign: "middle" }} /> {flags.length} flag{flags.length !== 1 ? "s" : ""}
+                          </div>
+                        )}
                         {expense.plannedPaymentDate && (
                           <div className="expense-date" style={{ marginTop: 4 }}>
                             Pays {expense.plannedPaymentDate}
@@ -259,7 +326,23 @@ export default function DashboardPage() {
                             <Data label="Receipt date" value={expense.receiptDate || "-"} />
                             <Data label="Payment date" value={expense.plannedPaymentDate || "-"} />
                             <Data label="Employee" value={expense.employeeName || "-"} />
+                            <Data label="Category" value={expense.category || "-"} />
+                            <Data label="Payment method" value={expense.paymentMethod || "-"} />
                           </div>
+
+                          {expense.comment && (
+                            <p className="muted" style={{ fontSize: 13, margin: "0 0 12px" }}>
+                              Comment: {expense.comment}
+                            </p>
+                          )}
+
+                          {flags.length > 0 && (
+                            <div className="flag-list" style={{ marginBottom: 14 }}>
+                              {flags.map((flag) => (
+                                <p key={`${expense.id}-${flag.code}`} className={`flag ${flag.severity}`}>{flag.message}</p>
+                              ))}
+                            </div>
+                          )}
 
                           {expense.rejectionReason && (
                             <p className="muted" style={{ fontSize: 13, margin: "0 0 12px" }}>
@@ -269,14 +352,18 @@ export default function DashboardPage() {
 
                           {isReviewer && isPending && (
                             <div>
-                              <textarea
-                                placeholder="Rejection reason (optional)"
+                              <select
                                 value={reasonById[expense.id || ""] || ""}
                                 onChange={(e) =>
                                   setReasonById((prev) => ({ ...prev, [expense.id || ""]: e.target.value }))
                                 }
                                 style={{ marginBottom: 10 }}
-                              />
+                              >
+                                <option value="">Select rejection reason</option>
+                                {REJECTION_REASONS.map((reason) => (
+                                  <option key={reason} value={reason}>{reason}</option>
+                                ))}
+                              </select>
                               <div className="actions">
                                 <button className="primary" onClick={() => review(expense, "approved")}>
                                   <Check size={14} /> Approve
@@ -286,6 +373,44 @@ export default function DashboardPage() {
                                 </button>
                               </div>
                             </div>
+                          )}
+                          {isReviewer && !isPending && expense.status !== "paid" && (
+                            <div>
+                              {expense.status === "approved" && (
+                                <select
+                                  value={reasonById[expense.id || ""] || ""}
+                                  onChange={(e) =>
+                                    setReasonById((prev) => ({ ...prev, [expense.id || ""]: e.target.value }))
+                                  }
+                                  style={{ marginBottom: 10 }}
+                                >
+                                  <option value="">Select rejection reason</option>
+                                  {REJECTION_REASONS.map((reason) => (
+                                    <option key={reason} value={reason}>{reason}</option>
+                                  ))}
+                                </select>
+                              )}
+                              <div className="actions">
+                                {expense.status === "rejected" && (
+                                  <button className="primary" onClick={() => review(expense, "approved")}>
+                                    <Check size={14} /> Approve instead
+                                  </button>
+                                )}
+                                {expense.status === "approved" && (
+                                  <button className="danger" onClick={() => review(expense, "rejected")}>
+                                    <X size={14} /> Reject instead
+                                  </button>
+                                )}
+                                <button className="secondary" onClick={() => reopen(expense)}>
+                                  Reopen as pending
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {profile?.role === "admin" && expense.status === "approved" && (
+                            <button className="primary" onClick={() => markPaid(expense)}>
+                              <Check size={14} /> Mark paid
+                            </button>
                           )}
                         </div>
                       </div>

@@ -7,7 +7,8 @@ import { signInWithCustomToken } from "firebase/auth";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { auth, db } from "@/lib/firebase/client";
 import { money } from "@/lib/money";
-import type { ReceiptOcr, UserProfile } from "@/lib/types";
+import { blockingFlags, policyFlagsForExpense } from "@/lib/policy";
+import { EXPENSE_CATEGORIES, PAYMENT_METHODS, type ReceiptOcr, type UserProfile } from "@/lib/types";
 
 type LoginProfile = UserProfile & { uid: string };
 
@@ -47,8 +48,14 @@ export default function KioskPage() {
   const [profile, setProfile] = useState<LoginProfile | null>(null);
   const [imageDataUrl, setImageDataUrl] = useState("");
   const [ocr, setOcr] = useState<ReceiptOcr>(emptyOcr);
+  const [category, setCategory] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Employee paid");
+  const [comment, setComment] = useState("");
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
+
+  const policyFlags = policyFlagsForExpense({ ...ocr, category, imageUrl: imageDataUrl });
+  const blockers = blockingFlags(policyFlags);
 
   useEffect(() => {
     if (!profile || imageDataUrl) return;
@@ -109,6 +116,9 @@ export default function KioskPage() {
   function retake() {
     setImageDataUrl("");
     setOcr(emptyOcr);
+    setCategory("");
+    setPaymentMethod("Employee paid");
+    setComment("");
     setMessage("");
   }
 
@@ -116,6 +126,10 @@ export default function KioskPage() {
     if (!profile || !imageDataUrl) return;
     if (!profile.managerId) {
       setMessage("This employee does not have a managerId in Firestore.");
+      return;
+    }
+    if (blockers.length > 0) {
+      setMessage(blockers[0].message);
       return;
     }
     setBusy("send");
@@ -133,6 +147,10 @@ export default function KioskPage() {
         managerId: profile.managerId,
         imageUrl: imageDataUrl,
         status: "pending",
+        category,
+        paymentMethod,
+        comment,
+        policyFlags,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }), "Expense save");
@@ -229,14 +247,69 @@ export default function KioskPage() {
           <section className="panel">
             <h2>OCR results</h2>
             {busy === "ocr" && <p className="muted" style={{ marginTop: 0 }}>Reading receipt...</p>}
-            <div className="data-list">
-              <Data label="Merchant" value={ocr.merchant || "-"} />
-              <Data label="Net price" value={money(ocr.netPrice, ocr.currency)} />
-              <Data label="Tax rate" value={`${ocr.taxRate || 0}%`} />
-              <Data label="Tax" value={money(ocr.taxAmount, ocr.currency)} />
-              <Data label="Total" value={money(ocr.totalPrice, ocr.currency)} />
-              <Data label="Confidence" value={`${Math.round((ocr.confidence || 0) * 100)}%`} />
+            <div className="form-grid">
+              <label>
+                Merchant
+                <input value={ocr.merchant} onChange={(e) => setOcr((prev) => ({ ...prev, merchant: e.target.value }))} />
+              </label>
+              <label>
+                Receipt date
+                <input type="date" value={ocr.receiptDate || ""} onChange={(e) => setOcr((prev) => ({ ...prev, receiptDate: e.target.value }))} />
+              </label>
+              <label>
+                Category
+                <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <option value="">Select category</option>
+                  {EXPENSE_CATEGORIES.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                Payment method
+                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+                  {PAYMENT_METHODS.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                Net price
+                <input type="number" step="0.01" value={ocr.netPrice} onChange={(e) => setOcr((prev) => ({ ...prev, netPrice: Number(e.target.value) }))} />
+              </label>
+              <label>
+                Tax rate
+                <input type="number" step="0.01" value={ocr.taxRate} onChange={(e) => setOcr((prev) => ({ ...prev, taxRate: Number(e.target.value) }))} />
+              </label>
+              <label>
+                Tax
+                <input type="number" step="0.01" value={ocr.taxAmount} onChange={(e) => setOcr((prev) => ({ ...prev, taxAmount: Number(e.target.value) }))} />
+              </label>
+              <label>
+                Total
+                <input type="number" step="0.01" value={ocr.totalPrice} onChange={(e) => setOcr((prev) => ({ ...prev, totalPrice: Number(e.target.value) }))} />
+              </label>
+              <label>
+                Currency
+                <input value={ocr.currency} onChange={(e) => setOcr((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} />
+              </label>
+              <label>
+                Confidence
+                <input readOnly value={`${Math.round((ocr.confidence || 0) * 100)}%`} />
+              </label>
             </div>
+            <label>
+              Comment
+              <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Optional note for your manager" />
+            </label>
+            {policyFlags.length > 0 && (
+              <div className="flag-list">
+                {policyFlags.map((flag) => (
+                  <p key={flag.code} className={`flag ${flag.severity}`}>{flag.message}</p>
+                ))}
+              </div>
+            )}
+            {imageDataUrl && (
+              <p className="muted" style={{ marginBottom: 0, fontSize: 12 }}>
+                Current total: {money(ocr.totalPrice, ocr.currency)}
+              </p>
+            )}
           </section>
         </div>
       )}
@@ -251,14 +324,5 @@ export default function KioskPage() {
         </p>
       )}
     </main>
-  );
-}
-
-function Data({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="data-row">
-      <span className="muted">{label}</span>
-      <strong>{value}</strong>
-    </div>
   );
 }

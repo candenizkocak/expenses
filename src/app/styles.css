@@ -415,6 +415,12 @@ button, input, textarea, select {
   user-select: none;
 }
 
+.expense-row.finance-row {
+  cursor: default;
+  grid-template-columns: 52px 1fr 130px 140px 110px;
+  user-select: auto;
+}
+
 .expense-row:last-child {
   border-bottom: 0;
 }
@@ -702,6 +708,13 @@ label textarea {
 }
 .badge.rejected::before { background: var(--warn); box-shadow: 0 0 5px var(--warn); }
 
+.badge.paid {
+  background: var(--ok-bg);
+  border-color: var(--ok-border);
+  color: var(--ok);
+}
+.badge.paid::before { background: var(--ok); box-shadow: 0 0 5px var(--ok); }
+
 /* ============================================================
    DATA LIST
 ============================================================ */
@@ -747,6 +760,68 @@ label textarea {
   display: grid;
   gap: 18px;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.toolbar {
+  margin-bottom: 14px;
+  max-width: 520px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.flag-list {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.flag {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  margin: 0;
+  padding: 8px 10px;
+}
+
+.flag.info {
+  background: var(--brand-soft);
+  border-color: var(--brand-ring);
+  color: var(--brand-light);
+}
+
+.flag.warning {
+  background: var(--amber-bg);
+  border-color: var(--amber-border);
+  color: var(--amber);
+}
+
+.flag.blocking {
+  background: var(--warn-bg);
+  border-color: var(--warn-border);
+  color: var(--warn);
+}
+
+.list-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  display: flex;
+  justify-content: space-between;
+  min-height: 58px;
+  padding: 10px 0;
+  text-align: left;
+  width: 100%;
+}
+
+.list-button span:first-child {
+  display: grid;
+  gap: 2px;
 }
 
 /* ============================================================
@@ -1443,7 +1518,17 @@ canvas {
     padding: 12px 14px;
   }
 
+  .expense-row.finance-row {
+    grid-template-columns: 44px 1fr;
+  }
+
   .expense-row > :nth-child(4) {
+    display: none;
+  }
+
+  .finance-row > :nth-child(3),
+  .finance-row > :nth-child(4),
+  .finance-row > :nth-child(5) {
     display: none;
   }
 
@@ -1484,5 +1569,9 @@ canvas {
   .topbar-pill {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 }
