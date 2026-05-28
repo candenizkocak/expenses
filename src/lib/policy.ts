@@ -7,8 +7,11 @@ type PolicyInput = Pick<ReceiptOcr, "merchant" | "receiptDate" | "totalPrice" | 
 
 export function policyFlagsForExpense(expense: PolicyInput): PolicyFlag[] {
   const flags: PolicyFlag[] = [];
+  const merchant = typeof expense.merchant === "string" ? expense.merchant : "";
+  const totalPrice = typeof expense.totalPrice === "number" ? expense.totalPrice : 0;
+  const confidence = typeof expense.confidence === "number" ? expense.confidence : 0;
 
-  if (!expense.merchant.trim()) {
+  if (!merchant.trim()) {
     flags.push({
       code: "missing_merchant",
       severity: "blocking",
@@ -24,7 +27,7 @@ export function policyFlagsForExpense(expense: PolicyInput): PolicyFlag[] {
     });
   }
 
-  if (!expense.totalPrice || expense.totalPrice <= 0) {
+  if (!totalPrice || totalPrice <= 0) {
     flags.push({
       code: "missing_total",
       severity: "blocking",
@@ -40,7 +43,7 @@ export function policyFlagsForExpense(expense: PolicyInput): PolicyFlag[] {
     });
   }
 
-  if ((expense.confidence || 0) < 0.7) {
+  if (confidence < 0.7) {
     flags.push({
       code: "low_confidence",
       severity: "warning",
@@ -48,7 +51,7 @@ export function policyFlagsForExpense(expense: PolicyInput): PolicyFlag[] {
     });
   }
 
-  if (expense.totalPrice > 3000) {
+  if (totalPrice > 3000) {
     flags.push({
       code: "high_amount",
       severity: "warning",
