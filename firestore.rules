@@ -14,18 +14,47 @@ service cloud.firestore {
       return signedIn() ? userDoc(request.auth.uid).data.role : null;
     }
 
+    function isAdmin() {
+      return role() == "admin";
+    }
+
+    function isManager() {
+      return role() == "manager";
+    }
+
+    function isExpenseOwner() {
+      return signedIn() && resource.data.employeeId == request.auth.uid;
+    }
+
+    function isAssignedManager() {
+      return signedIn() && isManager() && resource.data.managerId == request.auth.uid;
+    }
+
+    function isNewExpenseOwner() {
+      return signedIn()
+        && request.resource.data.employeeId == request.auth.uid
+        && request.resource.data.managerId == userDoc(request.auth.uid).data.managerId
+        && request.resource.data.status == "pending";
+    }
+
+    function isNotPaidYet() {
+      return !("status" in resource.data) || resource.data.status != "paid";
+    }
+
     match /users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || role() == "manager" || role() == "admin");
-      allow write: if role() == "admin";
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
     }
 
     match /rfidCards/{cardId} {
-      allow read: if signedIn();
-      allow write: if role() == "admin";
+      allow read, write: if isAdmin();
     }
 
     match /expenses/{expenseId} {
-      allow read, create, update: if signedIn();
+      allow read: if isAdmin() || isExpenseOwner() || isAssignedManager();
+      allow create: if isNewExpenseOwner();
+      allow update: if isNotPaidYet() && (isAdmin() || isAssignedManager());
+      allow delete: if false;
     }
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Download, LayoutDashboard, Receipt } from "lucide-react";
+import { BarChart3, Check, CheckSquare, Download, LayoutDashboard, Receipt, Square } from "lucide-react";
 import { collection, doc, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useEffect, useMemo, useState } from "react";
@@ -18,6 +18,7 @@ export default function FinancePage() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => onAuthStateChanged(auth, (currentUser) => {
     if (!currentUser) { router.push("/login"); return; }
@@ -29,12 +30,12 @@ export default function FinancePage() {
     return onSnapshot(doc(db, "users", user.uid), (snap) => {
       const currentProfile = snap.data() as UserProfile;
       setProfile(currentProfile);
-      if (currentProfile?.role === "employee") router.push("/dashboard");
+      if (currentProfile?.role !== "admin") router.push("/dashboard");
     });
   }, [router, user]);
 
   useEffect(() => {
-    if (!profile || profile.role === "employee") return;
+    if (!profile || profile.role !== "admin") return;
     return onSnapshot(query(collection(db, "expenses"), orderBy("createdAt", "desc")), (snap) => {
       setExpenses(snap.docs.map((item) => ({ id: item.id, ...item.data() }) as Expense));
     });
@@ -49,9 +50,17 @@ export default function FinancePage() {
     .filter((expense) => expense.status === "approved")
     .reduce((sum, expense) => sum + (expense.totalPrice || 0), 0);
 
+  const selectedExpenses = useMemo(
+    () => financeExpenses.filter((expense) => expense.id && selectedIds.includes(expense.id)),
+    [financeExpenses, selectedIds]
+  );
+
+  const exportExpenses = selectedExpenses.length > 0 ? selectedExpenses : financeExpenses;
+  const approvedSelected = selectedExpenses.filter((expense) => expense.status === "approved");
+
   function exportCsv() {
     const header = ["id", "employee", "merchant", "date", "category", "net", "tax", "total", "currency", "paymentMethod", "status", "plannedPaymentDate"];
-    const rows = financeExpenses.map((expense) => [
+    const rows = exportExpenses.map((expense) => [
       expense.id,
       expense.employeeName,
       expense.merchant,
@@ -84,7 +93,30 @@ export default function FinancePage() {
     });
   }
 
-  if (!profile || profile.role === "employee") {
+  function toggleSelected(expenseId: string) {
+    setSelectedIds((prev) =>
+      prev.includes(expenseId) ? prev.filter((id) => id !== expenseId) : [...prev, expenseId]
+    );
+  }
+
+  function toggleAllSelected() {
+    const ids = financeExpenses.map((expense) => expense.id).filter(Boolean) as string[];
+    const allSelected = ids.length > 0 && ids.every((id) => selectedIds.includes(id));
+    setSelectedIds(allSelected ? [] : ids);
+  }
+
+  async function markSelectedPaid() {
+    if (!user || approvedSelected.length === 0) return;
+    await Promise.all(approvedSelected.map((expense) => updateDoc(doc(db, "expenses", expense.id || ""), {
+      status: "paid",
+      paidAt: serverTimestamp(),
+      paidBy: user.uid,
+      updatedAt: serverTimestamp()
+    })));
+    setSelectedIds((prev) => prev.filter((id) => !approvedSelected.some((expense) => expense.id === id)));
+  }
+
+  if (!profile || profile.role !== "admin") {
     return <main className="shell"><div className="empty">Checking finance access...</div></main>;
   }
 
@@ -100,11 +132,25 @@ export default function FinancePage() {
         </div>
         <div className="actions">
           <a href="/dashboard" className="btn"><LayoutDashboard size={13} /> Dashboard</a>
-          <button className="primary" onClick={exportCsv} disabled={financeExpenses.length === 0}>
-            <Download size={14} /> Export CSV
+          <a href="/analytics" className="btn"><BarChart3 size={13} /> Analytics</a>
+          <button className="primary" onClick={exportCsv} disabled={exportExpenses.length === 0}>
+            <Download size={14} /> Export CSV{selectedExpenses.length > 0 ? ` (${selectedExpenses.length})` : ""}
           </button>
         </div>
       </div>
+
+      {financeExpenses.length > 0 && (
+        <div className="bulk-bar">
+          <button className="secondary" onClick={toggleAllSelected}>
+            {financeExpenses.every((expense) => expense.id && selectedIds.includes(expense.id)) ? <CheckSquare size={14} /> : <Square size={14} />}
+            {selectedIds.length > 0 ? `${selectedIds.length} selected` : "Select all"}
+          </button>
+          <button className="primary" disabled={approvedSelected.length === 0} onClick={markSelectedPaid}>
+            <Check size={14} /> Mark selected paid
+          </button>
+          {selectedIds.length > 0 && <button className="secondary" onClick={() => setSelectedIds([])}>Clear</button>}
+        </div>
+      )}
 
       <div className="expense-table-wrap">
         {financeExpenses.length === 0 ? (
@@ -114,6 +160,17 @@ export default function FinancePage() {
           </div>
         ) : financeExpenses.map((expense) => (
           <div className="expense-row finance-row" key={expense.id}>
+            <div className="select-cell">
+              {expense.id && (
+                <button
+                  className="select-box"
+                  onClick={() => toggleSelected(expense.id || "")}
+                  title="Select expense"
+                >
+                  {selectedIds.includes(expense.id) ? <CheckSquare size={16} /> : <Square size={16} />}
+                </button>
+              )}
+            </div>
             <img className="expense-thumb" src={expense.imageUrl} alt={`${expense.merchant || "Receipt"} receipt`} />
             <div>
               <div className="expense-merchant">{expense.merchant || "Unknown merchant"}</div>

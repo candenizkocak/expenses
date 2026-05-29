@@ -409,7 +409,7 @@ button, input, textarea, select {
   cursor: pointer;
   display: grid;
   gap: 16px;
-  grid-template-columns: 52px 1fr 120px 120px 32px;
+  grid-template-columns: 28px 52px 1fr 120px 120px 32px;
   padding: 14px 20px;
   transition: background 120ms;
   user-select: none;
@@ -417,7 +417,7 @@ button, input, textarea, select {
 
 .expense-row.finance-row {
   cursor: default;
-  grid-template-columns: 52px 1fr 130px 140px 110px;
+  grid-template-columns: 28px 52px 1fr 130px 140px 110px;
   user-select: auto;
 }
 
@@ -427,6 +427,26 @@ button, input, textarea, select {
 
 .expense-row:hover {
   background: var(--surface-hover);
+}
+
+.select-cell {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-width: 28px;
+}
+
+.select-box {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  min-height: 28px;
+  padding: 4px;
+}
+
+.select-box:not(:disabled):hover {
+  background: var(--surface-hover);
+  color: var(--brand-light);
 }
 
 .expense-thumb {
@@ -765,6 +785,236 @@ label textarea {
 .toolbar {
   margin-bottom: 14px;
   max-width: 520px;
+}
+
+.filter-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(140px, 1fr));
+  max-width: none;
+  padding: 14px;
+}
+
+.filter-panel input,
+.filter-panel select {
+  min-height: 38px;
+}
+
+.check-row {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--muted-strong);
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.check-row input {
+  min-height: auto;
+  width: auto;
+}
+
+.date-filter {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  display: grid;
+  gap: 6px;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 38px;
+  padding: 4px 6px 4px 10px;
+}
+
+.date-filter span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.date-filter input {
+  background: var(--surface);
+  min-height: 30px;
+  padding: 5px 8px;
+}
+
+.metric-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.metric-card,
+.group-summary {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px;
+}
+
+.metric-card {
+  display: grid;
+  gap: 4px;
+  min-height: 104px;
+}
+
+.metric-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.metric-card strong,
+.group-summary strong {
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.group-summary-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  margin: 0 0 16px;
+}
+
+.group-summary {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.group-summary-meta {
+  align-items: flex-end;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  gap: 4px;
+  text-align: right;
+}
+
+.group-summary-meta span {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.bulk-bar {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 10px;
+}
+
+.analytics-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.period-panel {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.period-panel select {
+  max-width: 220px;
+}
+
+.period-panel .date-filter {
+  min-width: min(100%, 330px);
+}
+
+.analytics-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 16px;
+}
+
+.analytics-panel h2 {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 14px;
+}
+
+.chart-list {
+  display: grid;
+  gap: 13px;
+}
+
+.chart-row {
+  display: grid;
+  gap: 5px;
+}
+
+.chart-row-head {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.chart-row-head span {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-row-head strong {
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chart-row p {
+  font-size: 11px;
+  margin: 0;
+}
+
+.chart-track {
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  height: 9px;
+  overflow: hidden;
+}
+
+.chart-track span {
+  background: linear-gradient(90deg, var(--brand) 0%, var(--brand-light) 100%);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
 }
 
 .form-grid {
@@ -1466,6 +1716,18 @@ canvas {
    RESPONSIVE
 ============================================================ */
 @media (max-width: 960px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
   .expense-detail {
     grid-template-columns: 1fr 1fr;
     padding-left: 22px;
@@ -1514,21 +1776,21 @@ canvas {
   }
 
   .expense-row {
-    grid-template-columns: 44px 1fr 94px 32px;
+    grid-template-columns: 28px 44px 1fr 94px 32px;
     padding: 12px 14px;
   }
 
   .expense-row.finance-row {
-    grid-template-columns: 44px 1fr;
+    grid-template-columns: 28px 44px 1fr;
   }
 
-  .expense-row > :nth-child(4) {
+  .expense-row > :nth-child(5) {
     display: none;
   }
 
-  .finance-row > :nth-child(3),
   .finance-row > :nth-child(4),
-  .finance-row > :nth-child(5) {
+  .finance-row > :nth-child(5),
+  .finance-row > :nth-child(6) {
     display: none;
   }
 
@@ -1558,6 +1820,11 @@ canvas {
   .page-body,
   .shell {
     padding: 16px;
+  }
+
+  .metric-grid,
+  .filter-panel {
+    grid-template-columns: 1fr;
   }
 
   .topbar {
