@@ -1,9 +1,8 @@
 "use client";
 
-import { BarChart3, Check, CheckSquare, ChevronDown, Download, LayoutDashboard, LogOut, Receipt, ScanLine, Settings, ShieldAlert, Square, X } from "lucide-react";
+import { BarChart3, Check, CheckSquare, ChevronDown, Download, LayoutDashboard, LogOut, PiggyBank, Receipt, ScanLine, Settings, ShieldAlert, Square, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ImageLightbox } from "@/components/ImageLightbox";
-import { BudgetWidget } from "@/components/BudgetWidget";
 import {
   collection,
   doc,
@@ -272,6 +271,10 @@ export default function DashboardPage() {
             <LayoutDashboard size={15} />
             {isReviewer ? "Approvals" : "My Expenses"}
           </a>
+          <a href="/budget" className="sidebar-nav-item">
+            <PiggyBank size={15} />
+            Budget
+          </a>
           <a href="/kiosk" className="sidebar-nav-item">
             <ScanLine size={15} />
             Kiosk
@@ -326,12 +329,6 @@ export default function DashboardPage() {
         </header>
 
         <div className="page-body">
-
-          {/* ─── Bütçe widget ─────────────────────────────────── */}
-          <BudgetWidget
-            expenses={expenses}
-            employeeId={profile?.role === "employee" ? user?.uid : undefined}
-          />
 
           <div className="metric-grid">
             <div className="metric-card">

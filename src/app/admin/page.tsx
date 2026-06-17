@@ -161,7 +161,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="grid">
+      <div className="grid" style={{ marginBottom: 18 }}>
         <form className="panel" onSubmit={saveUser}>
           <h2>User profile</h2>
           <label>Firebase Auth UID<input value={form.uid} onChange={(e) => setForm((prev) => ({ ...prev, uid: e.target.value }))} /></label>
@@ -206,10 +206,10 @@ export default function AdminPage() {
             ))}
           </div>
         </section>
-
-        {/* ─── Bütçe yönetimi ─────────────────────────────────── */}
-        <BudgetManager user={user} />
       </div>
+
+      {/* ─── Bütçe yönetimi ─────────────────────────────────── */}
+      <BudgetManager user={user} />
     </main>
   );
 }
