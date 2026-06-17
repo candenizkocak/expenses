@@ -33,7 +33,7 @@ export default function LoginPage() {
       <div className="login-brand">
         <div className="login-brand-top">
           <div className="login-brand-logo">
-            <span className="login-brand-mark">E</span>
+            <span className="login-brand-mark">IW</span>
             <span className="login-brand-name">Expense Portal</span>
           </div>
 

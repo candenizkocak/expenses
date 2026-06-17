@@ -124,7 +124,7 @@ export default function FinancePage() {
     <main className="shell">
       <div className="topbar-pill">
         <div className="brand-lockup">
-          <span className="brand-mark">E</span>
+          <span className="brand-mark">IW</span>
           <div className="title">
             <h1>Finance Export</h1>
             <p>{financeExpenses.length} approved or paid expenses - {money(approvedTotal, "TRY")} awaiting payment</p>

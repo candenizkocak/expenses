@@ -149,7 +149,7 @@ export default function AdminPage() {
     <main className="shell">
       <div className="topbar-pill">
         <div className="brand-lockup">
-          <span className="brand-mark">E</span>
+          <span className="brand-mark">IW</span>
           <div className="title">
             <h1>Admin Setup</h1>
             <p>Manage employee profiles and RFID card mappings.</p>

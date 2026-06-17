@@ -284,7 +284,7 @@ export default function DashboardPage() {
 
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <span className="sidebar-logo-mark">E</span>
+          <span className="sidebar-logo-mark">IW</span>
           <span className="sidebar-logo-name">Expense Portal</span>
         </div>
         <nav className="sidebar-nav">

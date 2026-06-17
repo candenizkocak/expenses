@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./styles.css";
 
 export const metadata: Metadata = {
-  title: "Expense Kiosk",
+  title: "InWise Kiosk",
   description: "RFID receipt expense kiosk and approval workflow"
 };
 

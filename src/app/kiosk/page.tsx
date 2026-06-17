@@ -190,9 +190,9 @@ export default function KioskPage() {
     <main className="shell">
       <div className="topbar-pill">
         <div className="brand-lockup">
-          <span className="brand-mark">E</span>
+          <span className="brand-mark">IW</span>
           <div className="title">
-            <h1>Expense Kiosk</h1>
+            <h1>InWise Kiosk</h1>
             <p>{profile ? `Welcome, ${profile.displayName}` : "Scan your RFID card to begin"}</p>
           </div>
         </div>
