@@ -287,7 +287,7 @@ export default function AnalyticsPage() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <span className="sidebar-logo-mark">IW</span>
-          <span className="sidebar-logo-name">Expense Portal</span>
+          <span className="sidebar-logo-name">InWise Portal</span>
         </div>
         <nav className="sidebar-nav">
           <span className="sidebar-nav-label">Navigation</span>

@@ -34,7 +34,7 @@ export default function LoginPage() {
         <div className="login-brand-top">
           <div className="login-brand-logo">
             <span className="login-brand-mark">IW</span>
-            <span className="login-brand-name">Expense Portal</span>
+            <span className="login-brand-name">InWise Portal</span>
           </div>
 
           <div>
@@ -71,7 +71,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="login-brand-footer">Copyright {new Date().getFullYear()} Expense Portal</p>
+        <p className="login-brand-footer">Copyright {new Date().getFullYear()} InWise Portal</p>
       </div>
 
       <div className="login-form-area">
