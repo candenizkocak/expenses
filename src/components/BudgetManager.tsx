@@ -3,7 +3,7 @@
 import { PiggyBank, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
-import { EXPENSE_CATEGORIES, CATEGORY_LABELS } from "@/lib/types";
+import { EXPENSE_CATEGORIES } from "@/lib/types";
 import type { Budget } from "@/lib/types";
 import { money } from "@/lib/money";
 
@@ -55,19 +55,14 @@ export function BudgetManager({ user }: Props) {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${token}`,
             },
-            body: JSON.stringify({
-              category,
-              year,
-              limitAmount: Number(val),
-              currency: "TRY",
-            }),
+            body: JSON.stringify({ category, year, limitAmount: Number(val), currency: "TRY" }),
           });
         })
       );
-      setMessage("Bütçeler kaydedildi.");
+      setMessage("Budgets saved.");
       await load(year);
     } catch {
-      setMessage("Kayıt sırasında hata oluştu.");
+      setMessage("Error saving budgets.");
     } finally {
       setSaving(false);
     }
@@ -86,11 +81,11 @@ export function BudgetManager({ user }: Props) {
     <section className="panel">
       <h2 style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <PiggyBank size={15} />
-        Kategori Bütçeleri
+        Category Budgets
       </h2>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <span className="muted" style={{ fontSize: 12, fontWeight: 600 }}>YIL</span>
+        <span className="muted" style={{ fontSize: 12, fontWeight: 600 }}>YEAR</span>
         <div style={{ display: "flex", gap: 4 }}>
           {YEARS.map((y) => (
             <button
@@ -109,26 +104,15 @@ export function BudgetManager({ user }: Props) {
         {EXPENSE_CATEGORIES.map((category) => {
           const existing = budgets.find((b) => b.category === category);
           return (
-            <div
-              key={category}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 180px 36px",
-                gap: 10,
-                alignItems: "center",
-              }}
-            >
+            <div key={category} style={{ display: "grid", gridTemplateColumns: "1fr 180px 36px", gap: 10, alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
-                  {CATEGORY_LABELS[category]}
-                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{category}</div>
                 {existing && (
                   <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-                    Mevcut: {money(existing.limitAmount, "TRY")}
+                    Current: {money(existing.limitAmount, "TRY")}
                   </div>
                 )}
               </div>
-
               <div style={{ position: "relative" }}>
                 <input
                   type="number"
@@ -136,38 +120,23 @@ export function BudgetManager({ user }: Props) {
                   step="100"
                   placeholder="Limit (TRY)"
                   value={form[category] || ""}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, [category]: e.target.value }))
-                  }
+                  onChange={(e) => setForm((prev) => ({ ...prev, [category]: e.target.value }))}
                   style={{ paddingRight: 40 }}
                 />
-                <span
-                  style={{
-                    position: "absolute",
-                    right: 10,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    fontSize: 11,
-                    color: "var(--muted)",
-                    pointerEvents: "none",
-                  }}
-                >
+                <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: "var(--muted)", pointerEvents: "none" }}>
                   ₺
                 </span>
               </div>
-
               {existing?.id ? (
                 <button
                   className="ghost"
                   style={{ color: "var(--warn)", minHeight: 36, padding: "4px 8px" }}
                   onClick={() => deleteBudget(existing.id!)}
-                  title="Bütçeyi sil"
+                  title="Delete budget"
                 >
                   <Trash2 size={14} />
                 </button>
-              ) : (
-                <div />
-              )}
+              ) : <div />}
             </div>
           );
         })}
@@ -176,13 +145,11 @@ export function BudgetManager({ user }: Props) {
       <div className="actions" style={{ marginTop: 16 }}>
         <button className="primary" onClick={save} disabled={saving}>
           <Save size={14} />
-          {saving ? "Kaydediliyor..." : `${year} bütçelerini kaydet`}
+          {saving ? "Saving..." : `Save ${year} budgets`}
         </button>
       </div>
 
-      {message && (
-        <p className="muted" style={{ marginTop: 10, fontSize: 13 }}>{message}</p>
-      )}
+      {message && <p className="muted" style={{ marginTop: 10, fontSize: 13 }}>{message}</p>}
     </section>
   );
 }

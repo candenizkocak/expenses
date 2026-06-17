@@ -4,7 +4,6 @@ import { PiggyBank, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useBudgets, calcBudgetUsage } from "@/lib/useBudgets";
 import { money } from "@/lib/money";
-import { CATEGORY_LABELS } from "@/lib/types";
 import type { Expense } from "@/lib/types";
 
 type Props = {
@@ -23,14 +22,7 @@ function barColor(percent: number): string {
 
 function BudgetBar({ percent }: { percent: number }) {
   return (
-    <div
-      style={{
-        background: "var(--surface-3)",
-        borderRadius: 999,
-        height: 7,
-        overflow: "hidden",
-      }}
-    >
+    <div style={{ background: "var(--surface-3)", borderRadius: 999, height: 7, overflow: "hidden" }}>
       <div
         style={{
           width: `${Math.min(100, percent)}%`,
@@ -71,7 +63,7 @@ export function BudgetWidget({ expenses, employeeId }: Props) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <h2 style={{ display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
           <PiggyBank size={15} />
-          Bütçe Kullanımı
+          Budget Usage
         </h2>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {[CURRENT_YEAR - 1, CURRENT_YEAR].map((y) => (
@@ -87,89 +79,45 @@ export function BudgetWidget({ expenses, employeeId }: Props) {
         </div>
       </div>
 
-      {/* Genel toplam */}
-      <div
-        style={{
-          background: "var(--surface-2)",
-          border: "1px solid var(--line)",
-          borderRadius: "var(--r-sm)",
-          padding: "12px 14px",
-          marginBottom: 14,
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-        }}
-      >
-        <TrendingUp
-          size={18}
-          style={{
-            color: totalPercent >= 90 ? "var(--warn)" : "var(--brand)",
-            flexShrink: 0,
-          }}
-        />
+      <div style={{ background: "var(--surface-2)", border: "1px solid var(--line)", borderRadius: "var(--r-sm)", padding: "12px 14px", marginBottom: 14, display: "flex", alignItems: "center", gap: 14 }}>
+        <TrendingUp size={18} style={{ color: totalPercent >= 90 ? "var(--warn)" : "var(--brand)", flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)" }}>Toplam bütçe</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)" }}>Total budget</span>
             <span style={{ fontSize: 12, color: "var(--muted)" }}>
               {money(totalUsed, "TRY")} / {money(totalLimit, "TRY")}
             </span>
           </div>
           <BudgetBar percent={totalPercent} />
         </div>
-        <span
-          style={{
-            fontSize: 13,
-            fontWeight: 700,
-            color: barColor(totalPercent),
-            minWidth: 36,
-            textAlign: "right",
-          }}
-        >
-          %{totalPercent}
+        <span style={{ fontSize: 13, fontWeight: 700, color: barColor(totalPercent), minWidth: 36, textAlign: "right" }}>
+          {totalPercent}%
         </span>
       </div>
 
-      {/* Kategori detayları */}
       <div style={{ display: "grid", gap: 12 }}>
         {activeBudgets.map((u) => (
           <div key={u.category}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                marginBottom: 5,
-              }}
-            >
-              <span style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)" }}>
-                {CATEGORY_LABELS[u.category] ?? u.category}
-              </span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5 }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: "var(--ink)" }}>{u.category}</span>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                 <span style={{ fontSize: 11, color: "var(--muted)" }}>
                   {money(u.usedAmount, "TRY")} / {money(u.limitAmount, "TRY")}
                 </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: barColor(u.usagePercent),
-                    minWidth: 30,
-                    textAlign: "right",
-                  }}
-                >
-                  %{u.usagePercent}
+                <span style={{ fontSize: 11, fontWeight: 700, color: barColor(u.usagePercent), minWidth: 30, textAlign: "right" }}>
+                  {u.usagePercent}%
                 </span>
               </div>
             </div>
             <BudgetBar percent={u.usagePercent} />
             {u.usagePercent >= 90 && u.usagePercent < 100 && (
               <p style={{ fontSize: 11, color: "var(--amber)", margin: "4px 0 0" }}>
-                ⚠ Bütçe sınırına yaklaşıldı — kalan {money(u.remainingAmount, "TRY")}
+                ⚠ Approaching budget limit — {money(u.remainingAmount, "TRY")} remaining
               </p>
             )}
             {u.usagePercent >= 100 && (
               <p style={{ fontSize: 11, color: "var(--warn)", margin: "4px 0 0", fontWeight: 600 }}>
-                ✕ Bu kategori bütçesi aşıldı
+                ✕ Budget exceeded for this category
               </p>
             )}
           </div>
