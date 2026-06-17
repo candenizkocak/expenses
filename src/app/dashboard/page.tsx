@@ -21,6 +21,7 @@ import { endOfMonthIso } from "@/lib/date";
 import { money } from "@/lib/money";
 import { duplicateFlags } from "@/lib/policy";
 import { EXPENSE_CATEGORIES, PAYMENT_METHODS, REJECTION_REASONS, type Expense, type UserProfile } from "@/lib/types";
+import { useEmailNotification } from "@/lib/useEmailNotification";
 
 type Tab = "all" | "pending" | "approved" | "rejected" | "paid";
 type SortMode = "newest" | "oldest" | "amountDesc" | "amountAsc";
@@ -179,6 +180,7 @@ export default function DashboardPage() {
 
   async function review(expense: Expense, status: "approved" | "rejected") {
     if (!expense.id || !user) return;
+    const plannedPaymentDate = status === "approved" ? endOfMonthIso(new Date()) : "";
     await updateDoc(doc(db, "expenses", expense.id), {
       status,
       reviewedAt: serverTimestamp(),
@@ -186,8 +188,27 @@ export default function DashboardPage() {
       updatedAt: serverTimestamp(),
       rejectReasonCode: status === "rejected" ? reasonById[expense.id] || "Needs more explanation" : "",
       rejectionReason: status === "rejected" ? reasonById[expense.id] || "Needs more explanation" : "",
-      plannedPaymentDate: status === "approved" ? endOfMonthIso(new Date()) : ""
+      plannedPaymentDate,
     });
+
+    // Çalışana email gönder
+    try {
+      const employeeDoc = await import("firebase/firestore").then(({ getDoc, doc: fsDoc }) =>
+        getDoc(fsDoc(db, "users", expense.employeeId))
+      );
+      const employeeEmail = employeeDoc.data()?.email;
+      if (employeeEmail) {
+        await sendNotification(
+          status,
+          { ...expense, plannedPaymentDate, rejectionReason: reasonById[expense.id] || "Needs more explanation" },
+          employeeEmail,
+          expense.employeeName
+        );
+      }
+    } catch {
+      // Email hatası ana akışı durdurmaz
+    }
+
     setExpandedId(null);
   }
 
@@ -253,6 +274,7 @@ export default function DashboardPage() {
 
   const avatarLetter = (profile?.displayName || user?.email || "?")[0].toUpperCase();
   const isReviewer = profile?.role === "manager" || profile?.role === "admin";
+  const { sendNotification } = useEmailNotification(user);
 
   return (
     <div className="app">

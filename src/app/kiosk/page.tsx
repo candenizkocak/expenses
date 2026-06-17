@@ -8,9 +8,10 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { auth, db } from "@/lib/firebase/client";
 import { money } from "@/lib/money";
 import { blockingFlags, policyFlagsForExpense } from "@/lib/policy";
+import { useEmailNotification } from "@/lib/useEmailNotification";
 import { EXPENSE_CATEGORIES, PAYMENT_METHODS, type ReceiptOcr, type UserProfile } from "@/lib/types";
 
-type LoginProfile = UserProfile & { uid: string };
+type LoginProfile = UserProfile & { uid: string; email?: string };
 
 const emptyOcr: ReceiptOcr = {
   merchant: "",
@@ -53,6 +54,8 @@ export default function KioskPage() {
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
+
+  const { sendNotification } = useEmailNotification(auth.currentUser);
 
   const policyFlags = policyFlagsForExpense({ ...ocr, category, imageUrl: imageDataUrl });
   const blockers = blockingFlags(policyFlags);
@@ -154,6 +157,24 @@ export default function KioskPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }), "Expense save");
+
+      // Email bildirimi — hata olursa ana akışı durdurmaz
+      if (profile.email) {
+        await sendNotification(
+          "submitted",
+          {
+            merchant: ocr.merchant,
+            totalPrice: ocr.totalPrice,
+            currency: ocr.currency,
+            receiptDate: ocr.receiptDate,
+            category,
+            paymentMethod,
+          },
+          profile.email,
+          profile.displayName
+        );
+      }
+
       retake();
       setProfile(null);
       await auth.signOut();
