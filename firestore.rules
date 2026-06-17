@@ -56,5 +56,10 @@ service cloud.firestore {
       allow update: if isNotPaidYet() && (isAdmin() || isAssignedManager());
       allow delete: if false;
     }
+
+    match /budgets/{budgetId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
   }
 }

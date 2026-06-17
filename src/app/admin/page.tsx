@@ -6,6 +6,7 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase/client";
+import { BudgetManager } from "@/components/BudgetManager";
 import type { Role, UserProfile } from "@/lib/types";
 
 type UserRow = UserProfile & { id: string };
@@ -88,10 +89,7 @@ export default function AdminPage() {
       .map((card) => deleteDoc(doc(db, "rfidCards", card.id))));
 
     if (newCardId) {
-      await setDoc(doc(db, "rfidCards", newCardId), {
-        uid,
-        disabled: false
-      });
+      await setDoc(doc(db, "rfidCards", newCardId), { uid, disabled: false });
     }
 
     setMessage("User profile saved.");
@@ -208,6 +206,9 @@ export default function AdminPage() {
             ))}
           </div>
         </section>
+
+        {/* ─── Bütçe yönetimi ─────────────────────────────────── */}
+        <BudgetManager user={user} />
       </div>
     </main>
   );

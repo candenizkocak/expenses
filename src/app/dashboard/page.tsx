@@ -3,6 +3,7 @@
 import { BarChart3, Check, CheckSquare, ChevronDown, Download, LayoutDashboard, LogOut, Receipt, ScanLine, Settings, ShieldAlert, Square, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { BudgetWidget } from "@/components/BudgetWidget";
 import {
   collection,
   doc,
@@ -82,6 +83,7 @@ export default function DashboardPage() {
         setLoading(false);
       },
       (err) => {
+        if (err.code === "permission-denied") return;
         setError(err.message);
         setLoading(false);
       }
@@ -109,7 +111,6 @@ export default function DashboardPage() {
     const approved = expenses.filter((expense) => expense.status === "approved");
     const pending = expenses.filter((expense) => expense.status === "pending");
     const flagged = expenses.filter((expense) => (expense.policyFlags || []).length > 0 || duplicateFlags(expense, expenses).length > 0);
-
     return {
       pendingAmount: sum(pending),
       approvedAmount: sum(approved),
@@ -118,51 +119,39 @@ export default function DashboardPage() {
     };
   }, [expenses]);
 
-  const filtered = useMemo(
-    () => {
-      const byStatus = activeTab === "all" ? expenses : expenses.filter((e) => e.status === activeTab);
-      const term = search.trim().toLowerCase();
-      const min = amountMin ? Number(amountMin) : null;
-      const max = amountMax ? Number(amountMax) : null;
+  const filtered = useMemo(() => {
+    const byStatus = activeTab === "all" ? expenses : expenses.filter((e) => e.status === activeTab);
+    const term = search.trim().toLowerCase();
+    const min = amountMin ? Number(amountMin) : null;
+    const max = amountMax ? Number(amountMax) : null;
 
-      return byStatus
-        .filter((expense) => {
-          const fields = [expense.merchant, expense.employeeName, expense.category, expense.receiptDate, expense.status, expense.comment];
-          const matchesTerm = !term || fields.filter(Boolean).some((value) => String(value).toLowerCase().includes(term));
-          const matchesCategory = !categoryFilter || expense.category === categoryFilter;
-          const matchesPayment = !paymentFilter || expense.paymentMethod === paymentFilter;
-          const matchesEmployee = !employeeFilter || expense.employeeName === employeeFilter;
-          const matchesDateFrom = !dateFrom || (expense.receiptDate || "") >= dateFrom;
-          const matchesDateTo = !dateTo || (expense.receiptDate || "") <= dateTo;
-          const matchesMin = min === null || (expense.totalPrice || 0) >= min;
-          const matchesMax = max === null || (expense.totalPrice || 0) <= max;
-          const flags = [...(expense.policyFlags || []), ...duplicateFlags(expense, expenses)];
-          const matchesFlag = !flaggedOnly || flags.length > 0;
-
-          return matchesTerm
-            && matchesCategory
-            && matchesPayment
-            && matchesEmployee
-            && matchesDateFrom
-            && matchesDateTo
-            && matchesMin
-            && matchesMax
-            && matchesFlag;
-        })
-        .sort((a, b) => {
-          if (sortMode === "amountDesc") return (b.totalPrice || 0) - (a.totalPrice || 0);
-          if (sortMode === "amountAsc") return (a.totalPrice || 0) - (b.totalPrice || 0);
-          const aDate = a.receiptDate || "";
-          const bDate = b.receiptDate || "";
-          return sortMode === "oldest" ? aDate.localeCompare(bDate) : bDate.localeCompare(aDate);
-        });
-    },
-    [activeTab, amountMax, amountMin, categoryFilter, dateFrom, dateTo, employeeFilter, expenses, flaggedOnly, paymentFilter, search, sortMode]
-  );
+    return byStatus
+      .filter((expense) => {
+        const fields = [expense.merchant, expense.employeeName, expense.category, expense.receiptDate, expense.status, expense.comment];
+        const matchesTerm = !term || fields.filter(Boolean).some((value) => String(value).toLowerCase().includes(term));
+        const matchesCategory = !categoryFilter || expense.category === categoryFilter;
+        const matchesPayment = !paymentFilter || expense.paymentMethod === paymentFilter;
+        const matchesEmployee = !employeeFilter || expense.employeeName === employeeFilter;
+        const matchesDateFrom = !dateFrom || (expense.receiptDate || "") >= dateFrom;
+        const matchesDateTo = !dateTo || (expense.receiptDate || "") <= dateTo;
+        const matchesMin = min === null || (expense.totalPrice || 0) >= min;
+        const matchesMax = max === null || (expense.totalPrice || 0) <= max;
+        const flags = [...(expense.policyFlags || []), ...duplicateFlags(expense, expenses)];
+        const matchesFlag = !flaggedOnly || flags.length > 0;
+        return matchesTerm && matchesCategory && matchesPayment && matchesEmployee
+          && matchesDateFrom && matchesDateTo && matchesMin && matchesMax && matchesFlag;
+      })
+      .sort((a, b) => {
+        if (sortMode === "amountDesc") return (b.totalPrice || 0) - (a.totalPrice || 0);
+        if (sortMode === "amountAsc") return (a.totalPrice || 0) - (b.totalPrice || 0);
+        const aDate = a.receiptDate || "";
+        const bDate = b.receiptDate || "";
+        return sortMode === "oldest" ? aDate.localeCompare(bDate) : bDate.localeCompare(aDate);
+      });
+  }, [activeTab, amountMax, amountMin, categoryFilter, dateFrom, dateTo, employeeFilter, expenses, flaggedOnly, paymentFilter, search, sortMode]);
 
   const groupSummaries = useMemo(() => {
     if (groupMode === "none") return [];
-
     const labelFor = (expense: Expense) => {
       if (groupMode === "employee") return expense.employeeName || "Unknown employee";
       if (groupMode === "category") return expense.category || "Uncategorized";
@@ -170,7 +159,6 @@ export default function DashboardPage() {
       if (groupMode === "paymentDate") return expense.plannedPaymentDate || "Unscheduled";
       return expense.receiptDate?.slice(0, 7) || "No date";
     };
-
     const groups = new Map<string, { label: string; count: number; total: number; flagged: number }>();
     filtered.forEach((expense) => {
       const label = labelFor(expense);
@@ -180,7 +168,6 @@ export default function DashboardPage() {
       current.flagged += (expense.policyFlags || []).length > 0 || duplicateFlags(expense, expenses).length > 0 ? 1 : 0;
       groups.set(label, current);
     });
-
     return Array.from(groups.values()).sort((a, b) => b.total - a.total);
   }, [expenses, filtered, groupMode]);
 
@@ -271,18 +258,14 @@ export default function DashboardPage() {
   return (
     <div className="app">
       {lightboxSrc && (
-        <ImageLightbox
-          src={lightboxSrc}
-          alt="Receipt"
-          onClose={() => setLightboxSrc(null)}
-        />
+        <ImageLightbox src={lightboxSrc} alt="Receipt" onClose={() => setLightboxSrc(null)} />
       )}
+
       <aside className="sidebar">
         <div className="sidebar-logo">
           <span className="sidebar-logo-mark">E</span>
           <span className="sidebar-logo-name">Expense Portal</span>
         </div>
-
         <nav className="sidebar-nav">
           <span className="sidebar-nav-label">Navigation</span>
           <a href="/dashboard" className="sidebar-nav-item active">
@@ -312,7 +295,6 @@ export default function DashboardPage() {
             </a>
           )}
         </nav>
-
         <div className="sidebar-user">
           <span className="sidebar-avatar">{avatarLetter}</span>
           <div className="sidebar-user-info">
@@ -344,6 +326,13 @@ export default function DashboardPage() {
         </header>
 
         <div className="page-body">
+
+          {/* ─── Bütçe widget ─────────────────────────────────── */}
+          <BudgetWidget
+            expenses={expenses}
+            employeeId={profile?.role === "employee" ? user?.uid : undefined}
+          />
+
           <div className="metric-grid">
             <div className="metric-card">
               <span className="metric-label">Pending amount</span>
@@ -368,11 +357,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="toolbar filter-panel">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search merchant, employee, category, date..."
-            />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search merchant, employee, category, date..." />
             <select value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
               <option value="">All employees</option>
               {employees.map((employee) => <option key={employee} value={employee}>{employee}</option>)}
@@ -388,7 +373,7 @@ export default function DashboardPage() {
             <div className="date-filter">
               <span>Date</span>
               <input aria-label="From date" type="text" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} placeholder="From" onFocus={(e) => { e.currentTarget.type = "date"; }} onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }} />
-              <input aria-label="Until date" type="text" value={dateTo} onChange={(e) => setDateTo(e.target.value)} placeholder="Until" onFocus={(e) => { e.currentTarget.type = "date"; }} onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }} />
+              <input aria-label="Until date" type="text" value={dateTo} onChange={(e) => setDateTo(e.target.value)} placeholder="Until" onFocus={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }} onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text"; }} />
             </div>
             <input type="number" min="0" step="0.01" value={amountMin} onChange={(e) => setAmountMin(e.target.value)} placeholder="Min amount" />
             <input type="number" min="0" step="0.01" value={amountMax} onChange={(e) => setAmountMax(e.target.value)} placeholder="Max amount" />
@@ -441,19 +426,13 @@ export default function DashboardPage() {
               <button className="danger" disabled={pendingSelected.length === 0} onClick={() => bulkReview("rejected")}>
                 <X size={14} /> Reject pending
               </button>
-              {selectedIds.length > 0 && (
-                <button className="secondary" onClick={() => setSelectedIds([])}>Clear</button>
-              )}
+              {selectedIds.length > 0 && <button className="secondary" onClick={() => setSelectedIds([])}>Clear</button>}
             </div>
           )}
 
           <div className="tabs">
             {(["all", "pending", "approved", "rejected", "paid"] as Tab[]).map((tab) => (
-              <button
-                key={tab}
-                className={`tab${activeTab === tab ? " active" : ""}`}
-                onClick={() => setActiveTab(tab)}
-              >
+              <button key={tab} className={`tab${activeTab === tab ? " active" : ""}`} onClick={() => setActiveTab(tab)}>
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 <span className="tab-count">{counts[tab]}</span>
               </button>
@@ -481,75 +460,36 @@ export default function DashboardPage() {
 
                 return (
                   <div key={expense.id}>
-                    <div
-                      className="expense-row"
-                      onClick={() => setExpandedId(isExpanded ? null : (expense.id ?? null))}
-                    >
+                    <div className="expense-row" onClick={() => setExpandedId(isExpanded ? null : (expense.id ?? null))}>
                       <div className="select-cell">
                         {isReviewer && expense.id && (
-                          <button
-                            className="select-box"
-                            onClick={(event) => { event.stopPropagation(); toggleSelected(expense.id || ""); }}
-                            title="Select expense"
-                          >
+                          <button className="select-box" onClick={(event) => { event.stopPropagation(); toggleSelected(expense.id || ""); }} title="Select expense">
                             {selectedIds.includes(expense.id) ? <CheckSquare size={16} /> : <Square size={16} />}
                           </button>
                         )}
                       </div>
-                      <img
-                        className="expense-thumb"
-                        src={expense.imageUrl}
-                        alt={`${expense.merchant || "Receipt"} receipt`}
-                        style={{ cursor: "zoom-in" }}
-                        onClick={(e) => { e.stopPropagation(); setLightboxSrc(expense.imageUrl); }}
-                      />
-
+                      <img className="expense-thumb" src={expense.imageUrl} alt={`${expense.merchant || "Receipt"} receipt`} style={{ cursor: "zoom-in" }} onClick={(e) => { e.stopPropagation(); setLightboxSrc(expense.imageUrl); }} />
                       <div>
                         <div className="expense-merchant">{expense.merchant || "Unknown merchant"}</div>
-                        <div className="expense-employee">
-                          {expense.employeeName}
-                          {expense.category ? ` - ${expense.category}` : ""}
-                        </div>
+                        <div className="expense-employee">{expense.employeeName}{expense.category ? ` - ${expense.category}` : ""}</div>
                       </div>
-
                       <div className="expense-amount">
                         {money(expense.totalPrice, expense.currency)}
                         <div className="expense-date">{expense.receiptDate || "-"}</div>
                       </div>
-
                       <div className="expense-meta">
                         <span className={`badge ${expense.status}`}>{expense.status}</span>
-                        {flags.length > 0 && (
-                          <div className="expense-date" style={{ marginTop: 4 }}>
-                            <ShieldAlert size={12} style={{ verticalAlign: "middle" }} /> {flags.length} flag{flags.length !== 1 ? "s" : ""}
-                          </div>
-                        )}
-                        {expense.plannedPaymentDate && (
-                          <div className="expense-date" style={{ marginTop: 4 }}>
-                            Pays {expense.plannedPaymentDate}
-                          </div>
-                        )}
+                        {flags.length > 0 && <div className="expense-date" style={{ marginTop: 4 }}><ShieldAlert size={12} style={{ verticalAlign: "middle" }} /> {flags.length} flag{flags.length !== 1 ? "s" : ""}</div>}
+                        {expense.plannedPaymentDate && <div className="expense-date" style={{ marginTop: 4 }}>Pays {expense.plannedPaymentDate}</div>}
                       </div>
-
-                      <div className={`chevron${isExpanded ? " open" : ""}`}>
-                        <ChevronDown size={16} />
-                      </div>
+                      <div className={`chevron${isExpanded ? " open" : ""}`}><ChevronDown size={16} /></div>
                     </div>
 
                     {isExpanded && (
                       <div className="expense-detail">
-                        <img
-                          className="expense-detail-image"
-                          src={expense.imageUrl}
-                          alt={`${expense.merchant || "Receipt"} receipt`}
-                          style={{ cursor: "zoom-in" }}
-                          onClick={() => setLightboxSrc(expense.imageUrl)}
-                        />
-
+                        <img className="expense-detail-image" src={expense.imageUrl} alt={`${expense.merchant || "Receipt"} receipt`} style={{ cursor: "zoom-in" }} onClick={() => setLightboxSrc(expense.imageUrl)} />
                         <div>
-                          <p style={{ margin: "0 0 12px", fontWeight: 600, fontSize: 15 }}>
-                            {expense.merchant || "Unknown merchant"}
-                          </p>
+                          <p style={{ margin: "0 0 12px", fontWeight: 600, fontSize: 15 }}>{expense.merchant || "Unknown merchant"}</p>
                           <div className="data-list">
                             <Data label="Net price" value={money(expense.netPrice, expense.currency)} />
                             <Data label="Tax rate" value={`${expense.taxRate || 0}%`} />
@@ -557,7 +497,6 @@ export default function DashboardPage() {
                             <Data label="Total" value={money(expense.totalPrice, expense.currency)} />
                           </div>
                         </div>
-
                         <div>
                           <div className="data-list" style={{ marginBottom: 16 }}>
                             <Data label="Receipt date" value={expense.receiptDate || "-"} />
@@ -566,88 +505,42 @@ export default function DashboardPage() {
                             <Data label="Category" value={expense.category || "-"} />
                             <Data label="Payment method" value={expense.paymentMethod || "-"} />
                           </div>
-
-                          {expense.comment && (
-                            <p className="muted" style={{ fontSize: 13, margin: "0 0 12px" }}>
-                              Comment: {expense.comment}
-                            </p>
-                          )}
-
+                          {expense.comment && <p className="muted" style={{ fontSize: 13, margin: "0 0 12px" }}>Comment: {expense.comment}</p>}
                           {flags.length > 0 && (
                             <div className="flag-list" style={{ marginBottom: 14 }}>
-                              {flags.map((flag) => (
-                                <p key={`${expense.id}-${flag.code}`} className={`flag ${flag.severity}`}>{flag.message}</p>
-                              ))}
+                              {flags.map((flag) => <p key={`${expense.id}-${flag.code}`} className={`flag ${flag.severity}`}>{flag.message}</p>)}
                             </div>
                           )}
-
-                          {expense.rejectionReason && (
-                            <p className="muted" style={{ fontSize: 13, margin: "0 0 12px" }}>
-                              Reason: {expense.rejectionReason}
-                            </p>
-                          )}
-
+                          {expense.rejectionReason && <p className="muted" style={{ fontSize: 13, margin: "0 0 12px" }}>Reason: {expense.rejectionReason}</p>}
                           {isReviewer && isPending && (
                             <div>
-                              <select
-                                value={reasonById[expense.id || ""] || ""}
-                                onChange={(e) =>
-                                  setReasonById((prev) => ({ ...prev, [expense.id || ""]: e.target.value }))
-                                }
-                                style={{ marginBottom: 10 }}
-                              >
+                              <select value={reasonById[expense.id || ""] || ""} onChange={(e) => setReasonById((prev) => ({ ...prev, [expense.id || ""]: e.target.value }))} style={{ marginBottom: 10 }}>
                                 <option value="">Select rejection reason</option>
-                                {REJECTION_REASONS.map((reason) => (
-                                  <option key={reason} value={reason}>{reason}</option>
-                                ))}
+                                {REJECTION_REASONS.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
                               </select>
                               <div className="actions">
-                                <button className="primary" onClick={() => review(expense, "approved")}>
-                                  <Check size={14} /> Approve
-                                </button>
-                                <button className="danger" onClick={() => review(expense, "rejected")}>
-                                  <X size={14} /> Reject
-                                </button>
+                                <button className="primary" onClick={() => review(expense, "approved")}><Check size={14} /> Approve</button>
+                                <button className="danger" onClick={() => review(expense, "rejected")}><X size={14} /> Reject</button>
                               </div>
                             </div>
                           )}
                           {isReviewer && !isPending && expense.status !== "paid" && (
                             <div>
                               {expense.status === "approved" && (
-                                <select
-                                  value={reasonById[expense.id || ""] || ""}
-                                  onChange={(e) =>
-                                    setReasonById((prev) => ({ ...prev, [expense.id || ""]: e.target.value }))
-                                  }
-                                  style={{ marginBottom: 10 }}
-                                >
+                                <select value={reasonById[expense.id || ""] || ""} onChange={(e) => setReasonById((prev) => ({ ...prev, [expense.id || ""]: e.target.value }))} style={{ marginBottom: 10 }}>
                                   <option value="">Select rejection reason</option>
-                                  {REJECTION_REASONS.map((reason) => (
-                                    <option key={reason} value={reason}>{reason}</option>
-                                  ))}
+                                  {REJECTION_REASONS.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
                                 </select>
                               )}
                               <div className="actions">
-                                {expense.status === "rejected" && (
-                                  <button className="primary" onClick={() => review(expense, "approved")}>
-                                    <Check size={14} /> Approve instead
-                                  </button>
-                                )}
-                                {expense.status === "approved" && (
-                                  <button className="danger" onClick={() => review(expense, "rejected")}>
-                                    <X size={14} /> Reject instead
-                                  </button>
-                                )}
-                                <button className="secondary" onClick={() => reopen(expense)}>
-                                  Reopen as pending
-                                </button>
+                                {expense.status === "rejected" && <button className="primary" onClick={() => review(expense, "approved")}><Check size={14} /> Approve instead</button>}
+                                {expense.status === "approved" && <button className="danger" onClick={() => review(expense, "rejected")}><X size={14} /> Reject instead</button>}
+                                <button className="secondary" onClick={() => reopen(expense)}>Reopen as pending</button>
                               </div>
                             </div>
                           )}
                           {profile?.role === "admin" && expense.status === "approved" && (
-                            <button className="primary" onClick={() => markPaid(expense)}>
-                              <Check size={14} /> Mark paid
-                            </button>
+                            <button className="primary" onClick={() => markPaid(expense)}><Check size={14} /> Mark paid</button>
                           )}
                         </div>
                       </div>

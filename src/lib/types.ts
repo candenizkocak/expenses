@@ -52,6 +52,32 @@ export type Expense = ReceiptOcr & {
   paidReference?: string;
 };
 
+// ─── Bütçe sistemi ────────────────────────────────────────────────────────────
+
+export type BudgetCategory = "Food" | "Transport" | "Office" | "Travel" | "Other";
+
+export type Budget = {
+  id?: string;
+  category: BudgetCategory;
+  year: number;
+  limitAmount: number;
+  currency: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+};
+
+export type BudgetUsage = {
+  category: BudgetCategory;
+  year: number;
+  limitAmount: number;
+  usedAmount: number;
+  remainingAmount: number;
+  usagePercent: number;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const EXPENSE_CATEGORIES = ["Food", "Transport", "Office", "Travel", "Other"] as const;
 export const PAYMENT_METHODS = ["Employee paid", "Company card", "Cash advance"] as const;
 export const REJECTION_REASONS = [
@@ -63,3 +89,11 @@ export const REJECTION_REASONS = [
   "Needs more explanation",
   "Personal expense"
 ] as const;
+
+export const CATEGORY_LABELS: Record<string, string> = {
+  Food: "Yemek & İçecek",
+  Transport: "Ulaşım",
+  Office: "Ofis & Kırtasiye",
+  Travel: "Seyahat",
+  Other: "Diğer",
+};
